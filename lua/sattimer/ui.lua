@@ -121,7 +121,7 @@ local function createWindow(type, seconds, title)
 
 	state.states[title].autocmd = vim.api.nvim_create_autocmd("VimResized", {
 		callback = function()
-			M.reposition(type)
+			M.reposition(title)
 		end,
 	})
 end
