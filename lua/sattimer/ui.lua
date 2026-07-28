@@ -11,7 +11,7 @@ function M.reposition(win, width)
 	})
 end
 
-function M.stopCountDown()
+function M.stopTimer()
   if not state.running then
     return vim.notify("Count down not running!")
   end
@@ -46,7 +46,6 @@ function M.startCountDown(seconds)
 
 	vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, {
 		"Timer",
-		"",
 		utils.convertSecondsToString(seconds),
 	})
 
@@ -75,13 +74,57 @@ function M.startCountDown(seconds)
 		vim.schedule_wrap(function()
 			seconds = seconds - 1
 
-			vim.api.nvim_buf_set_lines(state.buf, 2, 3, false, {
+			vim.api.nvim_buf_set_lines(state.buf, 1, 2, false, {
 				utils.convertSecondsToString(seconds),
 			})
 
 			if seconds <= 0 then
-				M.stopCountDown()
+				M.stopTimer()
+        vim.notify("Your count down finished!!")
 			end
+		end)
+	)
+end
+
+function M.startStopWatch()
+	state.running = true
+	state.buf = vim.api.nvim_create_buf(false, true)
+
+	vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, {
+		"StopWatch",
+		utils.convertSecondsToString(0),
+	})
+
+	state.win = vim.api.nvim_open_win(state.buf, false, {
+		relative = "editor",
+		width = constants.width,
+		height = constants.height,
+		row = 1,
+		col = vim.o.columns - constants.width - 2,
+		style = "minimal",
+		border = "rounded",
+		focusable = false,
+		zindex = 200,
+	})
+
+	state.autocmd = vim.api.nvim_create_autocmd("VimResized", {
+		callback = function()
+			M.reposition(state.win, constants.width)
+		end,
+	})
+
+  local seconds = 0
+
+	state.timer = vim.uv.new_timer()
+	state.timer:start(
+		1000, -- initial delay
+		1000, -- repeat every second
+		vim.schedule_wrap(function()
+			seconds = seconds + 1
+
+			vim.api.nvim_buf_set_lines(state.buf, 1, 2, false, {
+				utils.convertSecondsToString(seconds),
+			})
 		end)
 	)
 end

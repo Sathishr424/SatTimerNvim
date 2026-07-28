@@ -42,7 +42,7 @@ end
 
 function M.convertSecondsToString(seconds)
 	local hour = math.floor(seconds / (60 * 60))
-	local minute = math.floor(seconds / 60)
+	local minute = math.floor(seconds / 60) % 60
 	seconds = seconds % 60
 
 	local ret = ""

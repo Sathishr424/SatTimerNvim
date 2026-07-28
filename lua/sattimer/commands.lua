@@ -4,6 +4,14 @@ local utils = require("sattimer.utils")
 local ui = require("sattimer.ui")
 
 function M.setup()
+  vim.keymap.set("n", "<C-t>", function()
+    if state.running then
+      M.stopCountDown()
+    else
+      M.countDown("20s")
+    end
+  end)
+
 	vim.api.nvim_create_user_command("ReloadMyPlugin", function()
 		for name, _ in pairs(package.loaded) do
 			if name:match("^myplugin") then
@@ -22,6 +30,13 @@ function M.setup()
 	vim.api.nvim_create_user_command("StopCountDown", function()
 		M.stopCountDown()
 	end, {})
+
+	vim.api.nvim_create_user_command("StartStopWatch", function()
+		M.startStopWatch()
+	end, {})
+	vim.api.nvim_create_user_command("StopStopWatch", function()
+		M.stopStopWatch()
+	end, {})
 end
 
 -- print(parseDurationString("5m"))
@@ -29,7 +44,7 @@ end
 -- print(parseDurationString("5m 2s"))
 
 function M.stopCountDown()
-  ui.stopCountDown()
+  ui.stopTimer()
 end
 
 --- @param args string
@@ -45,6 +60,18 @@ function M.countDown(args)
 	end
 
   ui.startCountDown(seconds)
+end
+
+function M.startStopWatch()
+	if state.running then
+		return vim.notify("Another timer is already running, wait for it to finish or stop it using StopCountDown")
+	end
+
+  ui.startStopWatch()
+end
+
+function M.stopStopWatch()
+  ui.stopTimer()
 end
 
 return M
