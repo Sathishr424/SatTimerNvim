@@ -1,0 +1,111 @@
+*timer.txt*                A simple countdown timer and stopwatch for Neovim
+
+==============================================================================
+CONTENTS                                                  *timer-contents*
+
+1. Introduction ................................... |timer-introduction|
+2. Commands ....................................... |timer-commands|
+3. Duration Format ................................ |timer-duration|
+4. Examples ....................................... |timer-examples|
+
+==============================================================================
+INTRODUCTION                                      *timer-introduction*
+
+Timer.nvim provides two simple utilities:
+
+  • A countdown timer.
+  • A stopwatch.
+
+Both are displayed in a floating window and continue updating while you work.
+
+==============================================================================
+COMMANDS                                              *timer-commands*
+
+                                                        *:Timer*
+:Timer {duration}
+
+    Starts a countdown timer.
+
+    If a timer is already running, the command will have no effect.
+
+                                                        *:StopTimer*
+:StopTimer
+
+    Stops the currently running countdown timer.
+
+                                                        *:Stopwatch*
+:Stopwatch
+
+    Starts a stopwatch that counts upward from 00:00:00.
+
+    If a stopwatch is already running, the command will have no effect.
+
+                                                    *:StopStopwatch*
+:StopStopwatch
+
+    Stops the currently running stopwatch.
+
+==============================================================================
+DURATION FORMAT                                      *timer-duration*
+
+The |:Timer| command accepts durations consisting of hours, minutes,
+and seconds.
+
+Supported units:
+
+    h     Hours
+    m     Minutes
+    s     Seconds
+
+Units may be combined in any order from largest to smallest.
+
+Examples: >
+
+    20s
+    5m
+    1h
+    20m10s
+    1h20m23s
+    200s
+<
+
+==============================================================================
+EXAMPLES                                            *timer-examples*
+
+Start a 20 second countdown: >
+
+    :Timer 20s
+<
+
+Start a 5 minute countdown: >
+
+    :Timer 5m
+<
+
+Start a 20 minute 10 second countdown: >
+
+    :Timer 20m10s
+<
+
+Start a 1 hour 20 minute 23 second countdown: >
+
+    :Timer 1h20m23s
+<
+
+Start a stopwatch: >
+
+    :Stopwatch
+<
+
+Stop the countdown timer: >
+
+    :StopTimer
+<
+
+Stop the stopwatch: >
+
+    :StopStopwatch
+<
+
+==============================================================================
+vim:tw=78:ts=8:noet:ft=help:norl:

@@ -2,13 +2,11 @@ local M = {}
 
 function M.parseDurationString(str)
 	local n = string.len(str)
-	-- print(str .. " " .. n)
 
 	local prev = 0
 	local seconds = 0
 	for i = 1, n do
 		local char = string.sub(str, i, i)
-		-- print(i .. " " .. char)
 
 		if char == "s" then
 			seconds = seconds + prev
