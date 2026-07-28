@@ -6,44 +6,62 @@ CONTENTS                                                  *timer-contents*
 1. Introduction ................................... |timer-introduction|
 2. Commands ....................................... |timer-commands|
 3. Duration Format ................................ |timer-duration|
-4. Examples ....................................... |timer-examples|
+4. Naming ......................................... |timer-naming|
+5. Examples ....................................... |timer-examples|
 
 ==============================================================================
 INTRODUCTION                                      *timer-introduction*
 
 Timer.nvim provides two simple utilities:
 
-  • A countdown timer.
-  • A stopwatch.
+  • Countdown timers.
+  • Stopwatches.
 
-Both are displayed in a floating window and continue updating while you work.
+Each timer or stopwatch is displayed in its own floating window and continues
+updating while you work.
+
+Multiple timers and stopwatches can run simultaneously.
 
 ==============================================================================
 COMMANDS                                              *timer-commands*
 
                                                         *:Timer*
-:Timer {duration}
+:Timer {duration} [name]
 
-    Starts a countdown timer.
+    Starts a new countdown timer.
 
-    If a timer is already running, the command will have no effect.
+    {duration} is required.
+
+    [name] is optional. If omitted, a default name is generated using:
+
+        Timer <N>
+
+    where <N> is the next available timer number.
 
                                                         *:StopTimer*
-:StopTimer
+:StopTimer {name}
 
-    Stops the currently running countdown timer.
+    Stops the countdown timer with the given name.
+
+    The timer name is required.
 
                                                         *:Stopwatch*
-:Stopwatch
+:Stopwatch [name]
 
-    Starts a stopwatch that counts upward from 00:00:00.
+    Starts a new stopwatch counting upward from 00:00:00.
 
-    If a stopwatch is already running, the command will have no effect.
+    [name] is optional. If omitted, a default name is generated using:
+
+        Stopwatch <N>
+
+    where <N> is the next available stopwatch number.
 
                                                     *:StopStopwatch*
-:StopStopwatch
+:StopStopwatch {name}
 
-    Stops the currently running stopwatch.
+    Stops the stopwatch with the given name.
+
+    The stopwatch name is required.
 
 ==============================================================================
 DURATION FORMAT                                      *timer-duration*
@@ -57,7 +75,7 @@ Supported units:
     m     Minutes
     s     Seconds
 
-Units may be combined in any order from largest to smallest.
+Units may be combined from largest to smallest.
 
 Examples: >
 
@@ -70,41 +88,68 @@ Examples: >
 <
 
 ==============================================================================
+NAMING                                                  *timer-naming*
+
+Timers and stopwatches are identified by their names.
+
+If no name is provided, Timer.nvim automatically generates one.
+
+Examples:
+
+    Timer 1
+    Timer 2
+    Timer 3
+
+    Stopwatch 1
+    Stopwatch 2
+
+Custom names may also be used.
+
+Examples:
+
+    Study
+    Break
+    Workout
+    Interview
+
+Timer names and stopwatch names are used when stopping them.
+
+==============================================================================
 EXAMPLES                                            *timer-examples*
 
-Start a 20 second countdown: >
+Start a 20 second countdown with an automatically generated name: >
 
     :Timer 20s
 <
 
-Start a 5 minute countdown: >
+Start a named countdown timer: >
 
-    :Timer 5m
+    :Timer 25m Study
 <
 
-Start a 20 minute 10 second countdown: >
+Start another named timer: >
 
-    :Timer 20m10s
+    :Timer 5m Break
 <
 
-Start a 1 hour 20 minute 23 second countdown: >
+Stop the "Study" timer: >
 
-    :Timer 1h20m23s
+    :StopTimer Study
 <
 
-Start a stopwatch: >
+Start a stopwatch with an automatically generated name: >
 
     :Stopwatch
 <
 
-Stop the countdown timer: >
+Start a named stopwatch: >
 
-    :StopTimer
+    :Stopwatch Workout
 <
 
-Stop the stopwatch: >
+Stop the "Workout" stopwatch: >
 
-    :StopStopwatch
+    :StopStopwatch Workout
 <
 
 ==============================================================================
