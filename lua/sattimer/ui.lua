@@ -3,129 +3,180 @@ local state = require("sattimer.state")
 local utils = require("sattimer.utils")
 local constants = require("sattimer.constants")
 
-function M.reposition(type)
-	vim.api.nvim_win_set_config(state[type].win, {
+---@param message string
+---@param title? string
+---@param timeout? integer -- milliseconds
+function M.notify(message, title, timeout)
+    title = title or "SatTimer"
+    timeout = timeout or 3000
+
+    local lines = vim.split(message, "\n", { plain = true })
+
+    local width = 0
+    for _, line in ipairs(lines) do
+        width = math.max(width, vim.fn.strdisplaywidth(line))
+    end
+
+    local height = #lines
+
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.bo[buf].bufhidden = "wipe"
+
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+
+    local win = vim.api.nvim_open_win(buf, false, {
+        relative = "editor",
+        width = width,
+        height = height,
+        row = 1,
+        col = vim.o.columns - width - 1,
+        style = "minimal",
+        border = "rounded",
+        title = " " .. title .. " ",
+        title_pos = "center",
+        focusable = false,
+        zindex = 1000,
+        noautocmd = true,
+    })
+
+    local timer = vim.uv.new_timer()
+    timer:start(timeout, 0, vim.schedule_wrap(function()
+        if vim.api.nvim_win_is_valid(win) then
+            vim.api.nvim_win_close(win, true)
+        end
+        timer:stop()
+        timer:close()
+    end))
+end
+
+function M.reposition(title)
+	vim.api.nvim_win_set_config(state.states[title].win, {
 		relative = "editor",
-		row = state[type].row,
+		row = (state.states[title].row - 1) * constants.height * 2 + 1,
 		col = vim.o.columns - constants.width - 2,
 	})
 end
 
-function M.stopTimer(type)
-  local oppositeName = (type == "timer") and "stopwatch" or "timer"
-  if not state[type].running then
-    if type == "timer" then
-      vim.notify("Timer not running...")
-    elseif type == "stopwatch" then
-      vim.notify("Stopwatch not running...")
-    end
-    return
-  end
+function M.stopTimer(title)
+	if not state.titleExists(title) then
+		return M.notify("No stopwatch or timer exists with the given title")
+	end
 
-  if state[type].timer then
-    state[type].timer:stop()
-    state[type].timer:close()
-  end
+	if state.states[title].timer then
+		state.states[title].timer:stop()
+		state.states[title].timer:close()
+	end
 
-  if state[type].autocmd then
-    vim.api.nvim_del_autocmd(state[type].autocmd)
-  end
+	if state.states[title].autocmd then
+		vim.api.nvim_del_autocmd(state.states[title].autocmd)
+	end
 
-  if state[type].win and vim.api.nvim_win_is_valid(state[type].win) then
-    vim.api.nvim_win_close(state[type].win, true)
-  end
+	if state.states[title].win and vim.api.nvim_win_is_valid(state.states[title].win) then
+		vim.api.nvim_win_close(state.states[title].win, true)
+	end
 
-  if state[type].buf and vim.api.nvim_buf_is_valid(state[type].buf) then
-    vim.api.nvim_buf_delete(state[type].buf, { force = true })
-  end
+	if state.states[title].buf and vim.api.nvim_buf_is_valid(state.states[title].buf) then
+		vim.api.nvim_buf_delete(state.states[title].buf, { force = true })
+	end
 
-  state[type].running = false
-  state[type].buf = nil
-  state[type].win = nil
-  state[type].timer = nil
-  state[type].autocmd = nil
+	state.states[title].buf = nil
+	state.states[title].win = nil
+	state.states[title].timer = nil
+	state.states[title].autocmd = nil
 
-  if state[oppositeName].running then
-    state[oppositeName].row = 1
-    M.reposition(oppositeName)
-  end
+	local lastRow = state.states[title].row
+	state.states[title] = nil
+
+	for key, _ in pairs(state.states) do
+		if state.states[key].row > lastRow then
+			state.states[key].row = state.states[key].row - 1
+			M.reposition(key)
+		end
+	end
 end
 
-local function createWindow(type, seconds)
-  local name = (type == "timer") and "Timer" or "Stopwatch"
-  local oppositeName = (type == "timer") and "stopwatch" or "timer"
+local function createWindow(type, seconds, title)
+	local name = (type == "timer") and "Timer" or "Stopwatch"
+	local row = state.size()
+	state.states[title].row = row
 
-	vim.api.nvim_buf_set_lines(state[type].buf, 0, -1, false, {
+	vim.api.nvim_buf_set_lines(state.states[title].buf, 0, -1, false, {
 		name,
 		utils.convertSecondsToString(seconds),
 	})
 
-  local row = 1
-  if state[oppositeName].running then
-    row = row + constants.height * 2
-  end
-  state[type].row = row
-
-	state[type].win = vim.api.nvim_open_win(state[type].buf, false, {
+	state.states[title].win = vim.api.nvim_open_win(state.states[title].buf, false, {
 		relative = "editor",
 		width = constants.width,
 		height = constants.height,
-		row = row,
+		row = (state.states[title].row - 1) * constants.height * 2 + 1,
 		col = vim.o.columns - constants.width - 1,
 		style = "minimal",
 		border = "rounded",
 		focusable = false,
 		zindex = 200,
+		title = " " .. title .. " ",
+		title_pos = "center", -- "left", "center", or "right"
 	})
 
-	state[type].autocmd = vim.api.nvim_create_autocmd("VimResized", {
+	state.states[title].autocmd = vim.api.nvim_create_autocmd("VimResized", {
 		callback = function()
 			M.reposition(type)
 		end,
 	})
 end
 
-function M.startCountDown(seconds)
-	state.timer.running = true
-	state.timer.buf = vim.api.nvim_create_buf(false, true)
+function M.startCountDown(seconds, title)
+	if not state.addNewState("timer", title) then
+		return M.notify("Timer with this title already exists...")
+	end
+	local currState = state.states[title]
 
-  createWindow("timer", seconds)
+	currState.running = true
+	currState.buf = vim.api.nvim_create_buf(false, true)
 
-	state.timer.timer = vim.uv.new_timer()
-	state.timer.timer:start(
+	createWindow("timer", seconds, title)
+
+	currState.timer = vim.uv.new_timer()
+	currState.timer:start(
 		1000, -- initial delay
 		1000, -- repeat every second
 		vim.schedule_wrap(function()
 			seconds = seconds - 1
 
-			vim.api.nvim_buf_set_lines(state.timer.buf, 1, 2, false, {
+			vim.api.nvim_buf_set_lines(currState.buf, 1, 2, false, {
 				utils.convertSecondsToString(seconds),
 			})
 
 			if seconds <= 0 then
-				M.stopTimer("timer")
-        vim.notify("Your count down finished!!")
+				M.stopTimer(title)
+				M.notify("Your countdown finished!", "⏰ " .. title)
 			end
 		end)
 	)
 end
 
-function M.startStopWatch()
-	state.stopwatch.running = true
-	state.stopwatch.buf = vim.api.nvim_create_buf(false, true)
+function M.startStopWatch(title)
+	if not state.addNewState("stopwatch", title) then
+		return M.notify("Stopwatch with this title already exists...")
+	end
+	local currState = state.states[title]
 
-  createWindow("stopwatch", 0)
+	currState.running = true
+	currState.buf = vim.api.nvim_create_buf(false, true)
 
-  local seconds = 0
+	createWindow("stopwatch", 0, title)
 
-	state.stopwatch.timer = vim.uv.new_timer()
-	state.stopwatch.timer:start(
+	local seconds = 0
+
+	currState.timer = vim.uv.new_timer()
+	currState.timer:start(
 		1000, -- initial delay
 		1000, -- repeat every second
 		vim.schedule_wrap(function()
 			seconds = seconds + 1
 
-			vim.api.nvim_buf_set_lines(state.stopwatch.buf, 1, 2, false, {
+			vim.api.nvim_buf_set_lines(currState.buf, 1, 2, false, {
 				utils.convertSecondsToString(seconds),
 			})
 		end)

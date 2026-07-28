@@ -4,13 +4,13 @@ local utils = require("sattimer.utils")
 local ui = require("sattimer.ui")
 
 function M.setup()
-  -- vim.keymap.set("n", "<C-t>", function()
-  --   if state.timer.running then
-  --     M.stopCountDown()
-  --   else
-  --     M.countDown("20s")
-  --   end
-  -- end)
+	-- vim.keymap.set("n", "<C-t>", function()
+	--   if state.timer.running then
+	--     M.stopCountDown()
+	--   else
+	--     M.countDown("20s")
+	--   end
+	-- end)
 
 	-- vim.api.nvim_create_user_command("ReloadMyPlugin", function()
 	-- 	for name, _ in pairs(package.loaded) do
@@ -23,52 +23,59 @@ function M.setup()
 	-- end, {})
 
 	vim.api.nvim_create_user_command("Timer", function(opts)
-		M.countDown(opts.args)
+		local args = vim.split(opts.args, "%s+")
+		if #args == 0 then
+			return ui.notify("You should pass atleast duration of the Timer")
+		end
+
+		local duration = args[1]
+		local title = args[2] or ("Timer " .. (state.size() + 1))
+
+		M.countDown(duration, title)
 	end, {
 		nargs = 1,
 	})
-	vim.api.nvim_create_user_command("StopTimer", function()
-		M.stopCountDown()
-	end, {})
+	vim.api.nvim_create_user_command("StopTimer", function(opts)
+		M.stopCountDown(opts.args)
+	end, {
+		nargs = 1,
+	})
 
-	vim.api.nvim_create_user_command("Stopwatch", function()
-		M.startStopWatch()
-	end, {})
-	vim.api.nvim_create_user_command("StopStopwatch", function()
-		M.stopStopWatch()
-	end, {})
+	vim.api.nvim_create_user_command("Stopwatch", function(opts)
+    local title = opts.args
+    if title == "" then
+      title = "Stopwatch " .. (state.size() + 1)
+    end
+		M.startStopWatch(title)
+	end, {
+		nargs = "?",
+	})
+	vim.api.nvim_create_user_command("StopStopwatch", function(opts)
+		M.stopStopWatch(opts.args)
+	end, { nargs = 1 })
 end
 
---- @param args string
-function M.countDown(args)
-	if state.timer.running then
-		return vim.notify("Another timer is already running, wait for it to finish or stop it using :StopCountDown")
-	end
-
-	local seconds = utils.parseDurationString(args)
+--- @param duration string
+--- @param title string
+function M.countDown(duration, title)
+	local seconds = utils.parseDurationString(duration)
 	if seconds == -1 then
-		vim.notify("Not a valid timer duration")
-		return
+		return ui.notify("Not a valid timer duration")
 	end
 
-  ui.startCountDown(seconds)
+	ui.startCountDown(seconds, title)
 end
 
-function M.stopCountDown()
-  ui.stopTimer("timer")
+function M.stopCountDown(title)
+	ui.stopTimer(title)
 end
 
-
-function M.startStopWatch()
-	if state.stopwatch.running then
-		return vim.notify("Another stopwatch is already running, Close it before starting a new one using :StopStopWatch")
-	end
-
-  ui.startStopWatch()
+function M.startStopWatch(title)
+	ui.startStopWatch(title)
 end
 
-function M.stopStopWatch()
-  ui.stopTimer("stopwatch")
+function M.stopStopWatch(title)
+	ui.stopTimer(title)
 end
 
 return M
