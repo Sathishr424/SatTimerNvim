@@ -40,7 +40,7 @@ function M.addNewState(type, title)
 		win = nil,
 		type = type,
 		timer = nil,
-		row = #M.states + 1,
+		row = M.size(),
 		autocmd = nil,
 		running = false,
 	}
